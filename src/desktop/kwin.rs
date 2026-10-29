@@ -306,8 +306,12 @@ impl DesktopControl for KwinDesktopControl<'_> {
     }
     fn click(&self, x: i32, y: i32, button: u8, count: u8) -> Result<()> {
         validate_click_options(button, count)?;
-        self.move_pointer(x, y)?;
+        validate_workspace_coordinates(self.status, x, y, "pointer")?;
         let mut input = self.input()?;
+        let scale = self.status.session.scale;
+        input.pointer(x as f64 / scale, y as f64 / scale)?;
+        // Without this the press is dropped; see #175.
+        std::thread::sleep(Duration::from_millis(20));
         for _ in 0..count {
             input.button(linux_button(button)?, true)?;
             input.button(linux_button(button)?, false)?;
